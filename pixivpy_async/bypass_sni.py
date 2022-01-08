@@ -39,8 +39,7 @@ class ByPassResolver(AbstractResolver):
         async with client_session.get(url, params=params, timeout=timeout) as rsp:
             response = await rsp.text()
             obj = json.loads(response)
-            pattern = re.compile(
-                "((\d|[1-9]\d|1\d\d|2[0-4]\d|25[0-5])\.){3}(1\d\d|2[0-4]\d|25[0-5]|[1-9]\d|\d)")
+            pattern = re.compile(r"((\d|[1-9]\d|1\d\d|2[0-4]\d|25[0-5])\.){3}(1\d\d|2[0-4]\d|25[0-5]|[1-9]\d|\d)")
             result = []
             for i in obj["Answer"]:
                 ip = i["data"]
@@ -54,11 +53,11 @@ class ByPassResolver(AbstractResolver):
         通过 Cloudflare 的 DNS over HTTPS 请求真实的 IP 地址。
         """
         URLS = (
-            "https://1.0.0.1/dns-query",
             "https://1.1.1.1/dns-query",
-            "https://[2606:4700:4700::1001]/dns-query",
             "https://[2606:4700:4700::1111]/dns-query",
             "https://cloudflare-dns.com/dns-query",
+            "https://dns10.quad9.net/dns-query",
+            "https://dns.google/dns-query"
         )
         params = {
             "ct": "application/dns-json",
@@ -70,43 +69,12 @@ class ByPassResolver(AbstractResolver):
 
         async with aiohttp.ClientSession() as session:
             results = await asyncio.gather(
-                *(asyncio.create_task(self.fetch(session, url, params, ClientTimeout(total=timeout))) for url in URLS),
+                *(asyncio.create_task(self.fetch(session, url, params,
+                  ClientTimeout(total=timeout))) for url in URLS),
                 return_exceptions=True)
 
         for r in results:
             if not isinstance(r, Exception):
                 return r
-
-
-RESOLVER = ByPassResolver()
-
-
-def get_bypass_client() -> aiohttp.ClientSession:
-    ssl_ctx = ssl.SSLContext()
-    ssl_ctx.check_hostname = False
-    ssl_ctx.verify_mode = ssl.CERT_NONE
-    connector = aiohttp.TCPConnector(ssl=ssl_ctx, resolver=RESOLVER)
-    client = aiohttp.ClientSession(connector=connector)
-    return client
-
-
-class BypassClient:
-    def __init__(self):
-        self.client = get_bypass_client()
-
-    async def __aenter__(self) -> aiohttp.ClientSession:
-        return self.client
-
-    async def __aexit__(self, exc_type, exc_val, exc_tb):
-        await self.client.close()
-
-
-async def test():
-    async with BypassClient() as client:
-        async with client.get(
-                "https://www.pixiv.net/ajax/search/artworks/%E7%99%BE%E5%90%88?word=%E7%99%BE%E5%90%88&order=date_d&mode=all&p=99999990&s_mode=s_tag&type=all&lang=zh") as rsp:
-            print(await rsp.json())
-
-
-if __name__ == '__main__':
-    asyncio.run(test())
+        
+        raise Exception("Failed to resolve {}".format(hostname))

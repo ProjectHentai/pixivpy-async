@@ -6,11 +6,11 @@ from .bapi import BasePixivAPI
 
 
 class AppPixivAPI(BasePixivAPI):
-    def __init__(self, bypass=False, **requests_kwargs):
+    def __init__(self, **requests_kwargs):
         """
         initialize requests kwargs if need be
         """
-        super(AppPixivAPI, self).__init__(bypass=bypass, **requests_kwargs)
+        super(AppPixivAPI, self).__init__(**requests_kwargs)
 
     # 用户详情
     async def user_detail(
@@ -305,11 +305,11 @@ class AppPixivAPI(BasePixivAPI):
             max_bookmark_id_for_recommend: int = None,
             min_bookmark_id_for_recent_illust: int = None,
             offset: int = None,
-            include_ranking_illusts = None,
+            include_ranking_illusts=None,
             bookmark_illust_ids: list = None,
             include_privacy_policy=None,
             req_auth: bool = True,
-            viewed: [int] = None
+            viewed: list = None
     ) -> dict:
         if req_auth:
             method, url = self.api.illust_recommended_auth
@@ -613,6 +613,7 @@ class AppPixivAPI(BasePixivAPI):
         )
         return await self.requests_(method=method, url=url, params=params, auth=req_auth)
 
+    # 用户小说列表
     async def user_novels(
             self,
             user_id: int,
@@ -628,6 +629,7 @@ class AppPixivAPI(BasePixivAPI):
         )
         return await self.requests_(method=method, url=url, params=params, auth=req_auth)
 
+    # 小说系列详情
     async def novel_series(
             self,
             series_id: int,
@@ -643,6 +645,7 @@ class AppPixivAPI(BasePixivAPI):
         )
         return await self.requests_(method=method, url=url, params=params, auth=req_auth)
 
+    # 小说详情
     async def novel_detail(
             self,
             novel_id: int,
@@ -654,6 +657,7 @@ class AppPixivAPI(BasePixivAPI):
         )
         return await self.requests_(method=method, url=url, params=params, auth=req_auth)
 
+    # 小说正文 
     async def novel_text(
             self,
             novel_id: int,
@@ -662,6 +666,16 @@ class AppPixivAPI(BasePixivAPI):
         method, url = self.api.novel_text
         params = self.set_params(
             novel_id=novel_id,
+        )
+        return await self.requests_(method=method, url=url, params=params, auth=req_auth)
+
+    # 大家的新作
+    ## content_type: [illust, manga]
+    async def illust_new(self, content_type="illust", filter='for_ios', max_illust_id=None, req_auth=True):
+        method, url = self.api.illust_new
+        params = self.set_params(
+            content_type=content_type,
+            filter=filter,
         )
         return await self.requests_(method=method, url=url, params=params, auth=req_auth)
 
